@@ -145,25 +145,17 @@ router.get("/:userId", (req, res, next) => {
     });
 });
 
-router.patch("/:userId", (req, res, next) => {
+router.patch("/:userId",upload.single('image'), (req, res, next) => {
   const id = req.params.userId;
-  const updateOps = {};
-  for (const ops of req.body) {
-    updateOps[ops.propName] = ops.value;
-  }
-  /*updateOps[name]=req.body.name,
-  updateOps[collegeid]=req.body.collegeid,
-  updateOps[branch]=req.body.branch,
-  updateOps[tech]=req.body.tech,
-  updateOps[sub]=req.body.sub*/
-  Alien.update({ _id: id }, { $set: updateOps })
+  Alien.remove({ _id: id })
     .exec()
     .then(result => {
       res.status(200).json({
-          message: 'Data updated',
+          message: 'User deleted',
           request: {
-              type: 'GET',
-              url: 'http://localhost:3000/aliens/' + id
+              type: 'POST',
+              url: 'http://localhost:3000/aliens',
+              body: { name: 'String', collegeid: 'String' }
           }
       });
     })
@@ -173,6 +165,43 @@ router.patch("/:userId", (req, res, next) => {
         error: err
       });
     });
+    const alien = new Alien({
+    _id: new mongoose.Types.ObjectId(),
+           name: req.body.name,
+            collegeid: req.body.collegeid,
+            branch: req.body.branch,
+            tech:req.body.tech,
+            sub:req.body.sub,   
+            image: req.file.path 
+  });
+  alien
+    .save()
+    .then(result => {
+      console.log(result);
+      res.status(201).json({
+        message: "Created user successfully",
+        createdUser: {
+            name: result.name,
+            collegeid: result.collegeid,
+            branch:result.branch,
+            tech:result.tech,
+            sub:result.sub,
+
+            _id: result._id,
+            request: {
+                type: 'GET',
+                url: "http://localhost:3000/aliens/" + result._id
+            }
+        }
+      });
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({
+        error: err
+      });
+    });
+
 });
 
 router.delete("/:userId", (req, res, next) => {
